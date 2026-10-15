@@ -1,0 +1,15 @@
+package com.scc.model;
+
+public record User(
+        int id,
+        String full_name,
+        String email,
+        String password,
+        String roles,
+        String status
+) {
+    @Override
+    public String toString() {
+        return String.format("[%d] %s (%s) - Role: %s - Status: %s", id, full_name, email, roles, status);
+    }
+}
