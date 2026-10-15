@@ -1,6 +1,8 @@
 package com.scc;
 
 import com.scc.dao.UserDao;
+import com.scc.model.User;
+import com.scc.ui.AdminMenu;
 
 import java.util.Scanner;
 
@@ -22,6 +24,7 @@ public class Main {
 
             switch (choice){
                 case "1":
+                    handleLogin();
                     break;
                 case "2":
                     System.out.print("Enter Full Name: ");
@@ -31,7 +34,11 @@ public class Main {
                     System.out.print("Enter Password: ");
                     String password = sc.nextLine();
 
-                    System.out.print("\nSelect Role [1] Service Staff [2] Technician [3] Customer/Client: ");
+                    System.out.print("\nSelect Role "+
+                            "1] Service Staff " +
+                            "[2] Technician [" +
+                            "3] Customer/Client: ");
+
                     int roleChoice = sc.nextInt();
                         String role;
                         switch (roleChoice){
@@ -53,15 +60,34 @@ public class Main {
 
                         }else{
 
-                            System.out.println("Invalid role Selection!");
+                            System.out.println("Invalid roles Selection!");
                         }
                         break;
 
-
             }
 
+        }
 
+        private static void handleLogin(){
+            System.out.print("Enter username: ");
+            String username = sc.nextLine();
+            System.out.print("Enter Password: ");
+            String password = sc.nextLine();
 
+            User user = userDao.login(username, password);
+
+            if(user != null){
+                System.out.println("\n -> WELCOME "+user.full_name()+" | ROLE: " +user.role()+"");
+                switch (user.role().toUpperCase()) {
+                    case "ADMINISTRATOR":
+                    case "ADMIN":
+                        new AdminMenu(userDao, sc).display(user);
+                        break;
+
+                    default:
+                        System.out.println("Account role not found!");
+                }
+            }
 
         }
 }

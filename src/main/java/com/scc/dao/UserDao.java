@@ -1,29 +1,107 @@
 package com.scc.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import com.scc.model.User;
+
+import java.sql.*;
 
 public class UserDao {
-    public boolean registerUser(String full_name, String email, String password, String roles){
 
-        String sql = "INSERT INTO users(full_name, email, password, roles, status) VALUES(?, ?, ?, ?, 'PENDING')";
+    public UserDao(){
+
+        try(Connection conn = DatabaseConnection.getConnection();
+            Statement stmt = conn.createStatement()){
+
+            defaultAdminGenerator(conn);
+
+        }catch(SQLException e){
+            System.err.println("Error seeding default admin: " + e.getMessage());
+        }
+    }
+
+    public void defaultAdminGenerator(Connection conn) {
+        String checkSql = "SELECT COUNT(*) FROM Users WHERE role = 'Administrator'";
+        String insertSql = "INSERT INTO Users(full_name, email, password, role, status) "
+                + "VALUES('admin', 'admin@seeker.com', 'admin123', 'Administrator', 'Active')";
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(checkSql)) {
+
+            if (rs.next() && rs.getInt(1) == 0) {
+                stmt.executeUpdate(insertSql);
+                System.out.println(
+                        "-> Default Administrator Created "
+                                + "(Username: admin | Password: admin123)"
+                );
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error seeding default admin: " + e.getMessage());
+        }
+    }
+
+    public boolean registerUser(String fullName, String email, String password, String role) {
+
+        String sql = "INSERT INTO Users(full_name, email, password, role, status) VALUES(?, ?, ?, ?, 'Pending')";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, fullName);
+            pstmt.setString(2, email);
+            pstmt.setString(3, password);
+            pstmt.setString(4, role);
+            pstmt.executeUpdate();
+
+            System.out.println("-- Successful Registration, Waiting for Approval");
+            return true;
+
+        } catch (SQLException e) {
+            System.err.println("Failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public User login(String full_name, String password){
+
+        String sql = "SELECT user_id, full_name, email, password, role, status "
+                + "FROM Users WHERE full_name = ? AND password = ?";
 
         try(Connection conn = DatabaseConnection.getConnection();
             PreparedStatement pstmt = conn.prepareStatement(sql)){
 
-            pstmt.setString(1, full_name);
-            pstmt.setString(2, email);
-            pstmt.setString(3, password);
-            pstmt.setString(4, roles.toUpperCase());
-            pstmt.executeUpdate();
-            System.out.println("-> Successful Registration, Waiting for Approval!");
-            return true;
 
-        }catch (SQLException e){
-            System.err.println("Failed: "+ e.getMessage());
-            return false;
-        }
+            pstmt.setString(1, full_name);
+            pstmt.setString(2, password);
+
+            try(ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String status = rs.getString("status");
+                    if ("PENDING".equalsIgnoreCase(status)) {
+                        System.out.println(" -- Account is pending, waiting for Approval");
+                        return null;
+                    }
+                    return new User(
+                            rs.getInt("user_id"),
+                            rs.getString("full_name"),
+                            rs.getString("email"),
+                            rs.getString("password"),
+                            rs.getString("role"),
+                            status);
+
+                } else {
+                    System.out.println(" -- INVALID username or password -- ");
+                }
+
+            }
+
+        }catch(SQLException e){
+            System.err.println("Error during login: " + e.getMessage());
+
+
+        } return null;
+
 
     }
+
+
 }
