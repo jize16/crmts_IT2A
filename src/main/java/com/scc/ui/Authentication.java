@@ -40,7 +40,8 @@ public class Authentication {
                 System.out.print("\nSelect Role "+
                         "[1] Service Staff " +
                         "[2] Technician " +
-                        "[3] Customer/Client: ");
+                        "[3] Customer/Client" +
+                        "[4] Administrator: ");
 
                 int roleChoice = sc.nextInt();
                 String role;
@@ -54,6 +55,9 @@ public class Authentication {
                     case 3:
                         role = "CUSTOMER/CLIENT";
                         break;
+                    case 4:
+                        role = "ADMINISTRATOR";
+
                     default:
                         role = null;
                 }
