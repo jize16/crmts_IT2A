@@ -3,17 +3,19 @@ package com.scc.dao;
 import com.scc.model.User;
 
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserDao {
 
-    public UserDao(){
+    public UserDao() {
 
-        try(Connection conn = DatabaseConnection.getConnection();
-            Statement stmt = conn.createStatement()){
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement()) {
 
             defaultAdminGenerator(conn);
 
-        }catch(SQLException e){
+        } catch (SQLException e) {
             System.err.println("Error seeding default admin: " + e.getMessage());
         }
     }
@@ -41,7 +43,7 @@ public class UserDao {
 
     public boolean registerUser(String fullName, String email, String password, String role) {
 
-        String sql = "INSERT INTO Users(full_name, email, password, role, status) VALUES(?, ?, ?, ?, 'Pending')";
+        String sql = "INSERT INTO Users(full_name, email, password, role, status) VALUES(?, ?, ?, ?, 'PENDING')";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -61,19 +63,19 @@ public class UserDao {
         }
     }
 
-    public User login(String full_name, String password){
+    public User login(String full_name, String password) {
 
         String sql = "SELECT user_id, full_name, email, password, role, status "
                 + "FROM Users WHERE full_name = ? AND password = ?";
 
-        try(Connection conn = DatabaseConnection.getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql)){
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
 
             pstmt.setString(1, full_name);
             pstmt.setString(2, password);
 
-            try(ResultSet rs = pstmt.executeQuery()) {
+            try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     String status = rs.getString("status");
                     if ("PENDING".equalsIgnoreCase(status)) {
@@ -91,17 +93,36 @@ public class UserDao {
                 } else {
                     System.out.println(" -- INVALID username or password -- ");
                 }
-
             }
-
-        }catch(SQLException e){
+        } catch (SQLException e) {
             System.err.println("Error during login: " + e.getMessage());
-
-
-        } return null;
-
+        }
+        return null;
 
     }
 
+    public List<User> getAllUser() {
+        List<User> usersList = new ArrayList<>();
+        String sql = "SELECT user_id, full_name, email, password, role, status FROM users";
 
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                usersList.add(new User(
+                        rs.getInt("user_id"),
+                        rs.getString("full_name"),
+                        rs.getString("email"),
+                        rs.getString("password"),
+                        rs.getString("role"),
+                        rs.getString("status")
+                ));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching all users: " + e.getMessage());
+        }
+        return usersList;
+
+    }
 }
